@@ -1,36 +1,24 @@
-/* styles.css (atualizado) */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    touch-action: none;
+/* styles.css (versão aprimorada) */
+body {
+    background: linear-gradient(
+        45deg,
+        #0a0a2e,
+        #1a1a4f,
+        #2a2a6f
+    );
+    background-size: 400% 400%;
+    animation: gradientPulse 30s ease infinite;
 }
 
-body {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: #000;
-    font-family: 'Exo 2', sans-serif;
+@keyframes gradientPulse {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
     cursor: grab;
-}
-
-#instructions {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9em;
-    text-align: right;
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-    z-index: 1000;
-    pointer-events: none;
+    filter: contrast(120%) brightness(110%);
 }
 
 canvas:active {
