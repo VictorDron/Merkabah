@@ -1,17 +1,8 @@
-// scene.js
-const canvas = document.querySelector('#scene');
+const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const DPR = window.devicePixelRatio || 1;
 
-const state = {
-    rotation: { x: 0, y: 0, z: 0 },
-    scale: 1,
-    time: 0,
-    hue: 220,
-    mouse: { down: false, lastX: 0, lastY: 0 },
-    touch: { active: false, identifier: null }
-};
-
+// Configurações Globais
 const CONFIG = {
     particleCount: 800,
     torusRadius: 300,
@@ -21,6 +12,17 @@ const CONFIG = {
     zoomSensitivity: 0.0005
 };
 
+// Estado da Aplicação
+const state = {
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 1,
+    time: 0,
+    hue: 220,
+    mouse: { down: false, lastX: 0, lastY: 0 },
+    touch: { active: false, identifier: null }
+};
+
+// Classe Point3D (Geometria 3D)
 class Point3D {
     constructor(x = 0, y = 0, z = 0) {
         this.set(x, y, z);
@@ -31,13 +33,6 @@ class Point3D {
         this.y = y;
         this.z = z;
         return this;
-    }
-
-    rotate(angles) {
-        return this
-            .rotateX(angles.x)
-            .rotateY(angles.y)
-            .rotateZ(angles.z);
     }
 
     rotateX(angle) {
@@ -83,6 +78,7 @@ class Point3D {
     }
 }
 
+// Sistema de Partículas
 class ParticleSystem {
     constructor() {
         this.particles = Array.from({ length: CONFIG.particleCount }, () => ({
@@ -120,6 +116,7 @@ class ParticleSystem {
     }
 }
 
+// Geometria Sagrada (Conexões e Pontos)
 const sacredGeometry = {
     points: [],
     connections: new Set(),
@@ -181,6 +178,7 @@ const sacredGeometry = {
     }
 };
 
+// Merkaba (Tetraedros)
 function drawMerkaba() {
     const time = state.time * 0.002;
     const size = 120 + Math.sin(time) * 30;
@@ -217,25 +215,24 @@ function drawMerkaba() {
     });
 }
 
+// Inicialização do Canvas
 function init() {
     resizeCanvas();
     sacredGeometry.init();
-    
-    window.addEventListener('resize', () => {
-        resizeCanvas();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(DPR, DPR);
-    });
+    canvas.tabIndex = 0;
+    canvas.style.outline = 'none';
 
-    // Event handlers
-    const handleMouseDown = (e) => {
+    // Eventos de Mouse
+    canvas.addEventListener('mousedown', e => {
         state.mouse.down = true;
         state.mouse.lastX = e.clientX;
         state.mouse.lastY = e.clientY;
+        canvas.focus();
+        e.stopPropagation();
         e.preventDefault();
-    };
+    });
 
-    const handleMouseMove = (e) => {
+    document.addEventListener('mousemove', e => {
         if (!state.mouse.down) return;
         const deltaX = e.movementX || (e.clientX - state.mouse.lastX);
         const deltaY = e.movementY || (e.clientY - state.mouse.lastY);
@@ -245,30 +242,27 @@ function init() {
         
         state.mouse.lastX = e.clientX;
         state.mouse.lastY = e.clientY;
+        e.stopPropagation();
         e.preventDefault();
-    };
+    });
 
-    const handleMouseUp = () => {
-        state.mouse.down = false;
-    };
+    document.addEventListener('mouseup', () => state.mouse.down = false);
 
-    canvas.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    // Touch handlers
-    const handleTouchStart = (e) => {
+    // Eventos de Toque
+    canvas.addEventListener('touchstart', e => {
         if (e.touches.length === 1) {
             const touch = e.touches[0];
             state.touch.identifier = touch.identifier;
             state.touch.active = true;
             state.mouse.lastX = touch.clientX;
             state.mouse.lastY = touch.clientY;
+            canvas.focus();
+            e.stopPropagation();
             e.preventDefault();
         }
-    };
+    }, { passive: false });
 
-    const handleTouchMove = (e) => {
+    canvas.addEventListener('touchmove', e => {
         if (!state.touch.active) return;
         const touch = Array.from(e.touches).find(t => t.identifier === state.touch.identifier);
         if (touch) {
@@ -280,24 +274,30 @@ function init() {
             
             state.mouse.lastX = touch.clientX;
             state.mouse.lastY = touch.clientY;
+            e.stopPropagation();
             e.preventDefault();
         }
-    };
+    }, { passive: false });
 
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', () => {
-        state.touch.active = false;
-    });
+    canvas.addEventListener('touchend', () => state.touch.active = false);
 
+    // Zoom com Roda do Mouse
     canvas.addEventListener('wheel', e => {
-        e.preventDefault();
         state.scale = Math.min(2, Math.max(0.3, 
             state.scale - e.deltaY * CONFIG.zoomSensitivity
         ));
+        e.preventDefault();
+    }, { passive: false });
+
+    // Redimensionamento
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(DPR, DPR);
     });
 }
 
+// Ajuste do Tamanho do Canvas
 function resizeCanvas() {
     canvas.width = window.innerWidth * DPR;
     canvas.height = window.innerHeight * DPR;
@@ -305,9 +305,11 @@ function resizeCanvas() {
     canvas.style.height = window.innerHeight + 'px';
 }
 
+// Loop de Animação
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Fundo Gradiente
     const gradient = ctx.createRadialGradient(
         canvas.width/2, canvas.height/2, 0,
         canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)
@@ -317,6 +319,7 @@ function animate() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // Elementos Renderizados
     ctx.shadowColor = `hsl(${state.hue}, 100%, 50%)`;
     ctx.shadowBlur = 30 * state.scale;
     
@@ -325,6 +328,7 @@ function animate() {
     sacredGeometry.draw();
     drawMerkaba();
     
+    // Atualização de Estado
     state.time += 16;
     state.hue = (state.hue + CONFIG.hueSpeed) % 360;
     state.rotation.y += CONFIG.rotationSpeed;
@@ -332,6 +336,7 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
+// Inicialização
 const particleSystem = new ParticleSystem();
 init();
 animate();
