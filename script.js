@@ -1,5 +1,3 @@
-// scene.js
-
 const canvas = document.querySelector('#scene');
 const ctx = canvas.getContext('2d');
 const DPR = window.devicePixelRatio || 1;
@@ -9,8 +7,7 @@ const state = {
   scale: 1,
   time: 0,
   hue: 220,
-  mouse: { down: false, lastX: 0, lastY: 0 },
-  touch: { active: false, identifier: null }
+  mouse: { down: false, lastX: 0, lastY: 0 }
 };
 
 const CONFIG = {
@@ -110,8 +107,6 @@ class ParticleSystem {
 
   draw() {
     this.particles.forEach(p => {
-      // Criamos uma cópia antes de rotacionar,
-      // preservando o ponto original.
       const rotated = new Point3D(p.point.x, p.point.y, p.point.z)
         .rotate(state.rotation);
       const pos = rotated.project();
@@ -135,7 +130,6 @@ const sacredGeometry = {
     const radius = CONFIG.torusRadius;
     const increment = Math.PI * (3 - Math.sqrt(5));
 
-    // Distribui os pontos (tipo "esfera"/torus)
     this.points.forEach((point, i) => {
       const y = (i * (2 / 64)) - 1 + (1 / 64);
       const r = Math.sqrt(1 - y * y);
@@ -147,7 +141,6 @@ const sacredGeometry = {
       );
     });
 
-    // Gera conexões entre pontos próximos
     this.points.forEach((a, i) => {
       this.points.forEach((b, j) => {
         if (i !== j && a.distanceTo(b) < 150) {
@@ -158,7 +151,6 @@ const sacredGeometry = {
   },
 
   draw() {
-    // Exemplo de rotação "extra" para o efeito
     const rotation = {
       x: state.rotation.x * 0.3,
       y: state.rotation.y * 0.3,
@@ -166,11 +158,9 @@ const sacredGeometry = {
     };
 
     ctx.lineWidth = 2;
-    // Desenha as linhas
     this.connections.forEach(conn => {
       const [i, j] = conn.split('-').map(Number);
 
-      // Copiamos cada ponto, aplicamos rotação e projetamos
       const aRot = new Point3D(this.points[i].x, this.points[i].y, this.points[i].z).rotate(rotation);
       const bRot = new Point3D(this.points[j].x, this.points[j].y, this.points[j].z).rotate(rotation);
 
@@ -184,7 +174,6 @@ const sacredGeometry = {
       ctx.stroke();
     });
 
-    // Desenha as "esferas" (pontos)
     this.points.forEach((point, i) => {
       const pRot = new Point3D(point.x, point.y, point.z).rotate(rotation);
       const pos = pRot.project();
@@ -202,7 +191,6 @@ function drawMerkaba() {
   const time = state.time * 0.002;
   const size = 120 + Math.sin(time) * 30;
 
-  // Vértices-base de um tetraedro duplo
   const baseVertices = [
     new Point3D(0, size, 0),
     new Point3D(size, -size, 0),
@@ -210,9 +198,7 @@ function drawMerkaba() {
     new Point3D(0, 0, size * Math.sqrt(2))
   ];
 
-  // Desenha 2 tetraedros girando em sentidos opostos
   [1, -1].forEach(dir => {
-    // Cria cópia de cada vértice antes de rotacionar e projetar
     const rotatedVertices = baseVertices.map(v => {
       const copy = new Point3D(v.x, v.y, v.z);
       copy.rotateX(time * dir)
@@ -225,7 +211,6 @@ function drawMerkaba() {
     ctx.strokeStyle = `hsla(${state.hue}, 80%, 60%, 0.7)`;
     ctx.fillStyle = `hsla(${state.hue + 30}, 60%, 50%, 0.2)`;
 
-    // Índices das faces no array de vértices
     [[0,1,2], [0,1,3], [0,2,3], [1,2,3]].forEach(face => {
       ctx.beginPath();
       face.forEach((vi, i) => {
@@ -249,18 +234,14 @@ function init() {
 
   window.addEventListener('resize', () => {
     resizeCanvas();
-    // Reset da matriz de transformação se quiser
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(DPR, DPR);
   });
-
-  // --- Eventos de mouse ---
 
   const handleMouseDown = (e) => {
     state.mouse.down = true;
     state.mouse.lastX = e.clientX;
     state.mouse.lastY = e.clientY;
-    // e.preventDefault(); // Comente se preferir manter comportamento padrão
   };
 
   const handleMouseMove = (e) => {
@@ -273,7 +254,6 @@ function init() {
 
     state.mouse.lastX = e.clientX;
     state.mouse.lastY = e.clientY;
-    // e.preventDefault();
   };
 
   const handleMouseUp = () => {
@@ -284,42 +264,6 @@ function init() {
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
 
-  // --- Eventos de toque (touch) ---
-
-  const handleTouchStart = (e) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      state.touch.identifier = touch.identifier;
-      state.touch.active = true;
-      state.mouse.lastX = touch.clientX;
-      state.mouse.lastY = touch.clientY;
-      e.preventDefault(); // Para evitar scroll na tela
-    }
-  };
-
-  const handleTouchMove = (e) => {
-    if (!state.touch.active) return;
-    const touch = Array.from(e.touches).find(t => t.identifier === state.touch.identifier);
-    if (touch) {
-      const deltaX = touch.clientX - state.mouse.lastX;
-      const deltaY = touch.clientY - state.mouse.lastY;
-
-      state.rotation.y += deltaX * CONFIG.dragFactor;
-      state.rotation.x += deltaY * CONFIG.dragFactor;
-
-      state.mouse.lastX = touch.clientX;
-      state.mouse.lastY = touch.clientY;
-      e.preventDefault();
-    }
-  };
-
-  canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-  canvas.addEventListener('touchend', () => {
-    state.touch.active = false;
-  });
-
-  // Zoom via scroll
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     state.scale = Math.min(
@@ -342,7 +286,6 @@ function resizeCanvas() {
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Fundo
   const gradient = ctx.createRadialGradient(
     canvas.width / 2, canvas.height / 2, 0,
     canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height)
@@ -352,27 +295,21 @@ function animate() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Partículas
   ctx.shadowColor = `hsl(${state.hue}, 100%, 50%)`;
   ctx.shadowBlur = 30 * state.scale;
   particleSystem.update();
   particleSystem.draw();
 
-  // Geometria sagrada
   sacredGeometry.draw();
-
-  // Merkaba
   drawMerkaba();
 
-  // Atualiza tempo/cor/rotação lenta
-  state.time += 16; // ~16ms/frame (60 FPS)
+  state.time += 16;
   state.hue = (state.hue + CONFIG.hueSpeed) % 360;
   state.rotation.y += CONFIG.rotationSpeed;
 
   requestAnimationFrame(animate);
 }
 
-// Inicializa e anima
 const particleSystem = new ParticleSystem();
 init();
 animate();
